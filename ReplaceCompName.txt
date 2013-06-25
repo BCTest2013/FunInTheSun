@@ -3,7 +3,7 @@
 '
 ' Replace token in unattend.xml for %COMPNAME%
 '
-'
+'  Do It NOWWW
 ' Some of this code has been found in other locations and other scripts.
 '
 '
