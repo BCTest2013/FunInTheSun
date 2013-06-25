@@ -1,0 +1,56 @@
+'***********************************************************
+'***********************************************************
+'   Print Server Migration Script
+'
+'    Original Author:            Jarvis Davis
+'    Modified by:	Jason Pelletier - 1/12/2011
+'    
+'    Creation Date:    May 29, 2008
+'
+'    Purpose:        To migrate workstations from one print server to another
+'                         while maintaining the same printer names and default printer.
+'
+'    Assumption:        This is assuming that you have already migrated the printer
+'                    objects from one print server to another, and that the printer
+'                    share names have stayed the same.
+'    
+'
+'***********************************************************
+'    General Flow:
+'    * read all network printers into an array	
+'    * read default printer into a variable
+'    * delete all network printers that start with "\\OldPrintServer"
+'    * add back all of the printers in the network printers array but use \\NewPrintServer as the servername
+'    * If the original default printer was a network printer…set it back to that same name on the new server.
+'***********************************************************
+
+Set WshNetwork = CreateObject("WScript.Network")
+strComputer = "."
+Set objWMIService = GetObject ("winmgmts:\\" & strComputer & "\root\cimv2")
+
+' Read default printer into an array. Can be accessed using For Each objPrinter in colDefault
+Set colDefault = objWMIService.ExecQuery ("Select * From Win32_Printer Where Default = TRUE")
+
+' Read all printers from the old server into an array. Can be accessed using For Each objPrinter in colPrinters
+Set colPrinters = objWMIService.ExecQuery ("Select * From Win32_Printer Where ServerName = '\\\\Madison'")
+
+' Delete all network printers that start with OldPrintServer
+For Each objPrinter in colPrinters
+    objPrinter.Delete_
+Next
+
+' Add all network printers that were on the workstation using the new server name
+For Each objPrinter In colPrinters
+    WshNetwork.AddWindowsPrinterConnection "\\bradbury\" & objPrinter.Sharename
+Next
+
+' Determine if the original Default Printer was a network printer. If so, set it using the new print server name
+For Each objPrinter in colDefault
+    If objPrinter.ServerName = "\\madison" Then
+        strOldPrinterName = objPrinter.ServerName
+        strNewPrinterName = Replace(strOldPrinterName, "madison", "bradbury")
+	strNewDefaultShareName = objPrinter.ShareName
+        'objPrinter.SetDefaultPrinter(strNewDefaultShareName)
+	wshNetwork.SetDefaultPrinter strNewPrinterName & "\" & strNewDefaultShareName
+    End if
+Next
