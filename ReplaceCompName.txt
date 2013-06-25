@@ -1,0 +1,102 @@
+'''''''''''
+'
+'
+' Replace token in unattend.xml for %COMPNAME%
+'
+'
+' Some of this code has been found in other locations and other scripts.
+'
+'
+''''''''''' 
+
+
+On Error Resume Next
+
+Dim FileName, Find, ReplaceWith, FileContents, dFileContents, answer, app_name
+Find         = "%COMPNAME%"
+'ReplaceWith  = WScript.Arguments(1)
+
+FileName     = "X:\unattend.xml"
+
+
+'Code to check if this is a new computer or not. If no or if pop-up times out then bail out of script
+
+'========================================================
+'YOU CAN MODIFY THESE ACCORDING TO YOUR REQUIREMENT
+Const TIME_OUT = 120 'IN SECONDS
+Const wshYes = 6
+Const wshNo = 7
+Const wshYesNo = 4
+Const wshQuestion = 32
+const wshDefaultButton2 = 256
+answer = 7
+
+Set objShell = WScript.CreateObject("WScript.Shell")
+Set objFS = WScript.CreateObject("Scripting.FileSystemObject")
+
+
+answer=objshell.Popup("Is the computer that is about to be imaged a new machine?" & VbCrLf & "If yes you will be asked to provide it's computer name. If no then the name in the Symantec Console will be used."& VbCrLf & VbCrLf & "Click " & """Yes"""&" to continue or "&"""No"""&" to cancel the computer naming." & VbCrLf & VbCrLf & "The computer will use a system-supplied name in 2 minutes automatically if no choice is made.",TIME_OUT,"Name This Computer", wshYesNo+wshQuestion+wshDefaultButton2)
+
+'objShell.popup answer
+
+If answer = 7 then
+	wscript.quit
+elseif answer = -1 then
+	wscript.quit
+Else
+
+ReplaceWith = InputBox("Please enter the computer name of this machine","Computer Name Entry","Enter Name Here", wshYes)
+
+'Read source text file
+FileContents = GetFile(FileName)
+
+'replace all string In the source file
+dFileContents = replace(FileContents, Find, ReplaceWith, 1, -1, 1)
+
+'Compare source And result
+if dFileContents <> FileContents Then
+  'write result If different
+  WriteFile FileName, dFileContents
+
+  Wscript.Echo "Replace done."
+  If Len(ReplaceWith) <> Len(Find) Then 'Can we count n of replacements?
+    Wscript.Echo _
+    ( (Len(dFileContents) - Len(FileContents)) / (Len(ReplaceWith)-Len(Find)) ) & _
+    " replacements."
+  End If
+Else
+  Wscript.Echo "Searched string Not In the source file"
+End If
+
+'Read text file
+function GetFile(FileName)
+  If FileName<>"" Then
+    Dim FS, FileStream
+    Set FS = CreateObject("Scripting.FileSystemObject")
+      on error resume Next
+      Set FileStream = FS.OpenTextFile(FileName)
+      GetFile = FileStream.ReadAll
+  End If
+End Function
+
+'Write string As a text file.
+function WriteFile(FileName, Contents)
+  Dim OutStream, FS
+
+  on error resume Next
+  Set FS = CreateObject("Scripting.FileSystemObject")
+    Set OutStream = FS.OpenTextFile(FileName, 2, True)
+    OutStream.Write Contents
+End Function
+
+dim filesys
+set filesys=CreateObject("Scripting.FileSystemObject")
+
+If filesys.FileExists("X:\unattend.xml") Then
+   filesys.MoveFile "X:\unattend.xml", "X:\unattend1.xml"
+End If
+
+
+End If
+
+wscript.quit
