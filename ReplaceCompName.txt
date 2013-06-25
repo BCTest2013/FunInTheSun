@@ -1,5 +1,5 @@
 '''''''''''
-'
+' TESTING
 '
 ' Replace token in unattend.xml for %COMPNAME%
 '
